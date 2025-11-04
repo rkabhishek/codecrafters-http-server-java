@@ -36,13 +36,23 @@ public class Main {
 
       String line = bufferedReader.readLine();
       String urlPath = line.split(" ")[1];
-      String responseCode = null;
       if (Objects.equals(urlPath, "/")) {
-          responseCode = "200 OK";
+          return "HTTP/1.1 200 OK\r\n\r\n";
+      } else if (urlPath.startsWith("/echo")) {
+          return handleEchoRequest(urlPath);
       } else {
-          responseCode = "404 Not Found";
+          return "HTTP/1.1 404 Not Found\r\n\r\n";
+      }
+  }
+
+  private static String handleEchoRequest(String path) {
+      String prefix = "/echo/";
+      String body = "";
+      if (path.startsWith(prefix)) {
+          body = path.substring(prefix.length());
       }
 
-      return String.format("HTTP/1.1 %s\r\n\r\n", responseCode);
+      String headers = String.format("Content-Type: text/plain\r\nContent-Length: %d\r\n", body.length());
+      return String.format("HTTP/1.1 200 OK\r\n%s\r\n%s", headers, body);
   }
 }
