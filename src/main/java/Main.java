@@ -1,7 +1,8 @@
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 public class Main {
   public static void main(String[] args) {
@@ -17,7 +18,8 @@ public class Main {
 
        Socket clientConnection =  serverSocket.accept(); // Wait for connection from client.
        System.out.println("accepted new connection");
-       String response = "HTTP/1.1 200 OK\r\n\r\n";
+
+       String response = createResponse(clientConnection);
        OutputStream output = clientConnection.getOutputStream();
        output.write(response.getBytes());
        clientConnection.close();
@@ -25,5 +27,22 @@ public class Main {
      } catch (IOException e) {
        System.out.println("IOException: " + e.getMessage());
      }
+  }
+
+  static String createResponse(Socket clientConnection) throws IOException {
+      InputStream in = clientConnection.getInputStream();
+      InputStreamReader isReader = new InputStreamReader(in, StandardCharsets.UTF_8);
+      BufferedReader bufferedReader = new BufferedReader(isReader);
+
+      String line = bufferedReader.readLine();
+      String urlPath = line.split(" ")[1];
+      String responseCode = null;
+      if (Objects.equals(urlPath, "/")) {
+          responseCode = "200 OK";
+      } else {
+          responseCode = "404 Not Found";
+      }
+
+      return String.format("HTTP/1.1 %s\r\n\r\n", responseCode);
   }
 }
