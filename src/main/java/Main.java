@@ -12,9 +12,10 @@ public class Main {
     private static final String STATUS_BAD_REQUEST = "HTTP/1.1 400 Bad Request";
     private static final String STATUS_NOT_FOUND = "HTTP/1.1 404 Not Found";
     private static final String MISSING_HEADER = "Missing User-Agent header";
-    private static final String HEADER_TEMPLATE = "Content-Type: text/plain%sContent-Length: %d%s";
     private static final String HEADER_CONTENT_TYPE = "Content-Type";
     private static final String TYPE_OCTET_STREAM = "application/octet-stream";
+    private static final String TYPE_TEXT = "text/plain";
+
     private static final String HEADER_CONTENT_LENGTH = "Content-Length";
     private static String baseDirectory;
 
@@ -79,7 +80,7 @@ public class Main {
           body = path.substring(prefix.length());
       }
 
-      String headers = String.format(HEADER_TEMPLATE, CRLF, body.length(), CRLF);
+      String headers = String.format("%s: %s%s%s: %s%s", HEADER_CONTENT_TYPE, TYPE_TEXT, CRLF, HEADER_CONTENT_LENGTH, body.length(), CRLF);
       return String.format("%s%s%s%s%s", STATUS_OK, CRLF, headers, CRLF, body);
   }
 
@@ -91,7 +92,7 @@ public class Main {
               System.out.println("inside prefix\n");
               String body = line.split(" ")[1];
               System.out.println("body is " + body);
-              String headers = String.format(HEADER_TEMPLATE, CRLF, body.length(), CRLF);
+              String headers = String.format("%s: %s%s%s: %s%s", HEADER_CONTENT_TYPE, TYPE_TEXT, CRLF, HEADER_CONTENT_LENGTH, body.length(), CRLF);
               return String.format("%s%s%s%s%s", STATUS_OK, CRLF, headers, CRLF, body);
           }
       }
