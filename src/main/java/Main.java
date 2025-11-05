@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class Main {
+    private static final String MISSING_HEADER = "Missing User-Agent header";
   public static void main(String[] args) {
       // You can use print statements as follows for debugging, they'll be visible when running tests.
       System.out.println("Logs from your program will appear here!");
@@ -18,28 +19,31 @@ public class Main {
 
        Socket clientConnection =  serverSocket.accept(); // Wait for connection from client.
        System.out.println("accepted new connection");
+       BufferedReader reader = new BufferedReader(new InputStreamReader(clientConnection.getInputStream(), StandardCharsets.UTF_8));
+       String requestLine = reader.readLine();
+       if (requestLine == null) {
+           System.out.println("Empty request or connection closed.");
+       } else {
+           String response = createResponse(requestLine, reader);
+           OutputStream output = clientConnection.getOutputStream();
+           output.write(response.getBytes());
+       }
 
-       String response = createResponse(clientConnection);
-       OutputStream output = clientConnection.getOutputStream();
-       output.write(response.getBytes());
-       clientConnection.close();
-       serverSocket.close();
+         serverSocket.close();
+         clientConnection.close();
      } catch (IOException e) {
        System.out.println("IOException: " + e.getMessage());
      }
   }
 
-  static String createResponse(Socket clientConnection) throws IOException {
-      InputStream in = clientConnection.getInputStream();
-      InputStreamReader isReader = new InputStreamReader(in, StandardCharsets.UTF_8);
-      BufferedReader bufferedReader = new BufferedReader(isReader);
-
-      String line = bufferedReader.readLine();
-      String urlPath = line.split(" ")[1];
+  static String createResponse(String requestLine, BufferedReader reader) throws IOException {
+      String urlPath = requestLine.split(" ")[1];
       if (Objects.equals(urlPath, "/")) {
           return "HTTP/1.1 200 OK\r\n\r\n";
       } else if (urlPath.startsWith("/echo")) {
           return handleEchoRequest(urlPath);
+      } else if (urlPath.startsWith("/user-agent")) {
+          return handleUserAgentRequest(reader);
       } else {
           return "HTTP/1.1 404 Not Found\r\n\r\n";
       }
@@ -54,5 +58,20 @@ public class Main {
 
       String headers = String.format("Content-Type: text/plain\r\nContent-Length: %d\r\n", body.length());
       return String.format("HTTP/1.1 200 OK\r\n%s\r\n%s", headers, body);
+  }
+
+  private static String handleUserAgentRequest(BufferedReader bufferedReader) throws IOException {
+      String prefix = "User-Agent:";
+      String line;
+      while ((line = bufferedReader.readLine()) != null && !line.isEmpty()) {
+          if (line.startsWith(prefix)) {
+              System.out.println("inside prefix\n");
+              String body = line.split(" ")[1];
+              System.out.println("body is " + body);
+              String headers = String.format("Content-Type: text/plain\r\nContent-Length: %d\r\n", body.length());
+              return String.format("HTTP/1.1 200 OK\r\n%s\r\n%s", headers, body);
+          }
+      }
+      return String.format("HTTP/1.1 400 Bad Request\r\n%s\r\n%s", MISSING_HEADER, MISSING_HEADER.length());
   }
 }
