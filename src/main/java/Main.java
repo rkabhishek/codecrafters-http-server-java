@@ -13,29 +13,33 @@ public class Main {
     private static final String HEADER_TEMPLATE = "Content-Type: text/plain%sContent-Length: %d%s";
   public static void main(String[] args) {
       System.out.println("Logs from the program will appear here!");
-     try {
-       ServerSocket serverSocket = new ServerSocket(4221);
-       // Since the tester restarts the program quite often, setting SO_REUSEADDR
-       // ensures that we don't run into 'Address already in use' errors
-       serverSocket.setReuseAddress(true);
-
-       Socket clientConnection =  serverSocket.accept(); // Wait for connection from client.
-       System.out.println("accepted new connection");
-       BufferedReader reader = new BufferedReader(new InputStreamReader(clientConnection.getInputStream(), StandardCharsets.UTF_8));
-       String requestLine = reader.readLine();
-       if (requestLine == null) {
-           System.out.println("Empty request or connection closed.");
-       } else {
-           String response = createResponse(requestLine, reader);
-           OutputStream output = clientConnection.getOutputStream();
-           output.write(response.getBytes());
-       }
-
-         serverSocket.close();
-         clientConnection.close();
-     } catch (IOException e) {
-       System.out.println("IOException: " + e.getMessage());
-     }
+      try (ServerSocket serverSocket = new ServerSocket(4221)) {
+          // Since the tester restarts the program quite often, setting SO_REUSEADDR
+          // ensures that we don't run into 'Address already in use' errors
+          serverSocket.setReuseAddress(true);
+          while (true) {
+              Socket clientConnection = serverSocket.accept(); // Wait for connection from client.
+              System.out.println("accepted new connection");
+              new Thread(() -> {
+                  try {
+                      BufferedReader reader = new BufferedReader(new InputStreamReader(clientConnection.getInputStream(), StandardCharsets.UTF_8));
+                      String requestLine = reader.readLine();
+                      if (requestLine == null) {
+                          System.out.println("Empty request or connection closed.");
+                      } else {
+                          String response = createResponse(requestLine, reader);
+                          OutputStream output = clientConnection.getOutputStream();
+                          output.write(response.getBytes());
+                      }
+                      clientConnection.close();
+                  } catch (IOException e) {
+                      System.out.println("IOException: " + e.getMessage());
+                  }
+              }).start();
+          }
+      } catch (IOException e) {
+          System.out.println("IOException: " + e.getMessage());
+      }
   }
 
   static String createResponse(String requestLine, BufferedReader reader) throws IOException {
