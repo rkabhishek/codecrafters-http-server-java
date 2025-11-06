@@ -72,16 +72,18 @@ public class Main {
         } else if (urlPath.startsWith("/user-agent")) {
             return handleUserAgentRequest(reader);
         } else if (urlPath.startsWith("/files")) {
-            if (Objects.equals(method, "GET")) {
-                return handleGETFileRequest(urlPath);
-            } else {
-                String pathPrefix = "/files/";
-                String fileName = urlPath.substring(pathPrefix.length());
-                if (fileName.isEmpty()) {
-                    return String.format("%s%s%s", STATUS_BAD_REQUEST, CRLF, CRLF);
-                }
+            String pathPrefix = "/files/";
+            String fileName = urlPath.substring(pathPrefix.length());
+            if (fileName.isEmpty()) {
+                return String.format("%s%s%s", STATUS_BAD_REQUEST, CRLF, CRLF);
+            }
 
-                String fullPath = baseDirectory + fileName;
+            String fullPath = baseDirectory + fileName;
+            System.out.println("full path " + fullPath);
+
+            if (Objects.equals(method, "GET")) {
+                return handleGETFileRequest(fullPath);
+            } else {
                 String line;
                 int length = 0;
                 while ((line = reader.readLine()) != null && !line.isEmpty()) {
@@ -130,16 +132,9 @@ public class Main {
         return String.format("%s%s%s%s%s", STATUS_BAD_REQUEST, CRLF, MISSING_HEADER, CRLF, MISSING_HEADER.length());
     }
 
-    private static String handleGETFileRequest(String urlPath) throws IOException {
-        System.out.println("handling file");
-        String pathPrefix = "/files/";
-        String fileName = urlPath.substring(pathPrefix.length());
-        if (fileName.isEmpty()) {
-            return String.format("%s%s%s", STATUS_NOT_FOUND, CRLF, CRLF);
-        }
-
-        String fullPath = baseDirectory + fileName;
-        Path path = Path.of(fullPath);
+    private static String handleGETFileRequest(String filePath) throws IOException {
+        System.out.println("handling file get");
+        Path path = Path.of(filePath);
         if (!Files.exists(path)) {
             return String.format("%s%s%s", STATUS_NOT_FOUND, CRLF, CRLF);
         }
